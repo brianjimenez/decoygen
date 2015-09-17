@@ -55,3 +55,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# PyCharm
+.idea/
+
+# Specific ignores to this project
+bin/
