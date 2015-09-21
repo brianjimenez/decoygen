@@ -65,6 +65,7 @@ if __name__ == "__main__":
         args = get_arguments()
 
         protein = parsePDB(args.pdb_structure)
+        protein = protein.select('protein').copy()
         logger.info('%s loaded' % args.pdb_structure)
 
         if args.to_center:
@@ -77,13 +78,16 @@ if __name__ == "__main__":
             random_rotation = Transformation(random_rotation_matrix)
             applyTransformation(random_rotation, protein)
 
-        ca_atoms = protein.ca
+        ca_atoms = protein.select('protein and name CA')
         protein_anm = ANM('%s ca' % args.structure_name)
         protein_anm.buildHessian(ca_atoms)
         protein_anm.calcModes(n_modes=args.normal_modes)
 
+        print 'Normal modes calculated'
+        
         protein_anm_ext, protein_all = extendModel(protein_anm, ca_atoms, protein, norm=True)
 
+        print 'Normal modes extended'
         if args.save_models:
             saveAtoms(protein, args.structure_name)
             saveModel(protein_anm, args.structure_name)
@@ -91,9 +95,14 @@ if __name__ == "__main__":
 
         ens = sampleModes(protein_anm_ext, atoms=protein.protein, n_confs=args.num_decoys, rmsd=args.rmsd)
 
+        print 'Normal modes sampled'
+
+        print ens.getCoordsets().shape
         protein.addCoordset(ens.getCoordsets())
         protein.all.setBetas(0)
         protein.ca.setBetas(1)
+
+        print 'Writing files'
 
         if not os.path.exists(args.output_folder_path):
             os.mkdir(args.output_folder_path)
